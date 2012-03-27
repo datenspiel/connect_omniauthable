@@ -8,6 +8,7 @@ _       = require('./util/underscore_extension')._
 
 Client      = require("./models/client").Client
 AccessGrant = require("./models/grant_access").AccessGrant
+AccessToken = require("./models/access_token").AccessToken
 
 # Error response types as described in draft-ietf-oauth-v2-23
 # section 4.1.2.1
@@ -126,7 +127,7 @@ class OAuthServer
     unless Mongoose.Base.isEmpty(params)
       # Params are not empty, so some are send. 
       # Check if params are included.
-      @checkAuthorizationParams(params)
+      @validateAuthorizationParams(params)
   
       # Is client present?
       Client.find({'client_id':params['client_id']},(err,records)=>
@@ -189,12 +190,15 @@ class OAuthServer
   # Used if the url matches oauth_config.grantClientAccessURL. 
   # (See lib/oauth_config.coffee)
   #
+  # Method: POST
+  # 
   # Adds a new AccessGrant for the client which was granted access.
   # Redirects the browser back to redirect_uri with the authorization code.
   grantClientAccess:->
     clientId = @req.body.client_id
     state    = @req.body.state
-    # What happens if GrantAccess for given client exists? 
+    # What happens if GrantAccess for given client exists? Since the authorization 
+    # code is unique I would say that this is ignorable. 
 
     # new grant access
     accessGrant = new AccessGrant()
@@ -209,6 +213,32 @@ class OAuthServer
         @responseHeader.redirectTo("#{redirectUri}?code=#{grant.getAuthorizationCode()}&state=#{state}")
       )
     )
+
+  # Used if the url matches oauth_config.accessTokenRequestEndpointURL.
+  # (See lib/oauth_config.coffee)
+  #
+  # Method: POST
+  #
+  # The following parameters are required:
+  #
+  #   * code          - The authorization code which was send by #grantClientAccess
+  #   * redirect_uri  - The location registered and used in the initial request (#authenticateClient)
+  #   * grant_type    - The value 'authorization_code'
+  #   * client_id     - The client id with which the client is registered.
+  #   * client_secret - The client secret with which the client is registered
+  #
+  # It authorizes the client and if this is done and all above listed parameters
+  # are valid it sends an Access Token Response as json.
+  requestAccessToken:->
+    params = 
+      code          : @req.body.code
+      redirect_uri  : @req.body.redirect_uri
+      grant_type    : @req.body.grant_type
+      client_id     : @req.body.client_id
+      client_secret : @req.body.client_secret
+
+    @validateAccessTokenParams(params)
+
 
   # Test method. 
   # Should be removed in later versions.
@@ -256,7 +286,7 @@ class OAuthServer
   # params - A parameter map which is described in #authenticateClient
   #
   # It calls #handleErrors if an error occured otherwise it returns nothing. 
-  checkAuthorizationParams:(params)->
+  validateAuthorizationParams:(params)->
     required = ['client_id', 'response_type', 'redirect_uri','state']
     errors = []
     for parameter in required
@@ -267,6 +297,30 @@ class OAuthServer
       errors.push({errorMsg: 'invalid URL format for redirect_uri'})
 
     @handleError(errors) unless _.isEmpty(errors)
+
+  # Validates the params which are required in #requestAccessToken.
+  # 
+  # params - A paramater map which contains
+  #   code          - The authorization code which was send by #grantClientAccess
+  #   redirect_uri  - The location registered and used in the initial request (#authenticateClient)
+  #   grant_type    - The value 'authorization_code'
+  #   client_id     - The client id with which the client is registered.
+  #   client_secret - The client secret with which the client is registered
+  #
+  # If any error occurs #handleErrors is called (described in section 5.2)
+  # otherwise it returns nothing
+  validateAccessTokenParams:(params)->
+    required = ['code', 'redirect_uri', 'grant_type','client_id', 'client_secret']
+    errors = []
+    for parameter in required
+      if params[parameter] is ''
+        errors.push({error: "#{parameter} is empty but required."})
+    unless _(params['redirect_uri']).isValidUrl()
+      errors.push({error: 'invalid URL format for redirect_uri.'})
+    unless params['grant_type'] isnt 'authorization_code'
+      errors.push({error: 'Invalid type for grant_type.'})
+
+    @handleErrors(errors, {type: "json"}) unless _.isEmpty(errors)
 
   # Writes any given data to the response object and sends it.
   # 

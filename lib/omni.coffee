@@ -22,8 +22,10 @@ class oauth
       authenticateClientMatcher = routeMatcher(config.oauth_config.authorizationUrlBase)
       denyClientAccessMatcher   = routeMatcher(config.oauth_config.denyClientAccessURL)
       grantClientAccessMatcher  = routeMatcher(config.oauth_config.grantClientAccessURL)
+      accessTokenRequestMatcher = routeMatcher(config.oauth_config.accessTokenRequestEndpointURL)
       server.authenticateClient() if authenticateClientMatcher.parse(url)?
       server.grantClientAccess()  if grantClientAccessMatcher.parse(url)?
+      server.requestAccessToken() if accessTokenRequestMatcher.parse(url)?
       denyAccessParams = denyClientAccessMatcher.parse(url)
       if denyAccessParams?
         server.denyClientAccess(denyAccessParams['id'],denyAccessParams['state'])
