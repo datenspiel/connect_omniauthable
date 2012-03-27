@@ -4,7 +4,8 @@ later within the middleware
 ###
 
 oauth_config = 
-  authorizationUrlBase   : '/o/oauth2/auth'
-  accessTokenExchangeURI : ''
-
+  authorizationUrlBase    : '/o/oauth2/auth'
+  accessTokenExchangeURL  : ''
+  denyClientAccessURL     : '/deny/access/:id/:state'
+  grantClientAccessURL    : '/grant/access'
 exports.oauth_config = oauth_config

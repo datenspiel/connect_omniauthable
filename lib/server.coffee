@@ -6,7 +6,8 @@ fs      = require 'fs'
 _       = require('./util/underscore_extension')._
 
 
-Client = require("./models/client").Client
+Client      = require("./models/client").Client
+AccessGrant = require("./models/grant_access").AccessGrant
 
 # Error response types as describe in draft-ietf-oauth-v2-23
 # section 4.1.2.1
@@ -139,7 +140,7 @@ class OAuthServer
           # redirect_uri from params
           if client.getRedirectUri() isnt params['redirect_uri']
             # redirect back to redirect_uri from params with error parameter
-            @unauthorizedRequest(params, responseError.access_denied)
+            @unauthorizedRequest(params, responseError.access)
           else
             localVars = 
               client: client.getApplicationName()
@@ -159,6 +160,38 @@ class OAuthServer
     else
       # Error handling for missing parameters.
       @handleError({msg: "Missing parameters!"})
+
+  denyClientAccess:(client_id,state)->
+    Client.find({'client_id':client_id},(err,records)=>
+      console.log(err) if err
+      if records.length is 0
+      else
+        client = Client.becomesFrom(records[0])
+        params = 
+          redirect_uri  : client.getRedirectUri()
+          state         : state
+        @unauthorizedRequest(params, responseError.access)
+
+    )
+
+  grantClientAccess:->
+    clientId = @req.body.client_id
+    state    = @req.body.state
+    # What happens if GrantAccess for given client exists? 
+
+    # new grant access
+    accessGrant = new AccessGrant()
+    accessGrant.set('client_id':clientId)
+    accessGrant.save()
+    AccessGrant.find({'client_id':clientId,'revoked':false,'created_at':accessGrant.getCreatedAt()},(err,docs)=>
+      # We assume there is only one.
+      grant = AccessGrant.becomesFrom(docs[0])
+      Client.find({'client_id':clientId}, (err,clients)=>
+        client = Client.becomesFrom(clients[0])
+        redirectUri = client.getRedirectUri()
+        @responseHeader.redirectTo("#{redirectUri}?code=#{grant.getAuthorizationCode()}&state=#{state}")
+      )
+    )
 
   # Test method. 
   # Should be removed in later versions.

@@ -29,7 +29,7 @@ body
     p
       | You are here with state #{state}
     
-    form(action='/post', method='POST',id="messageForm")
+    form(action='/grant/access', method='POST',id="messageForm")
       fieldset
         legend #{client}
         input(type="hidden", value="#{client_id}", name="client_id")
@@ -43,4 +43,4 @@ body
           proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
         .form-actions
           button.btn.btn-success(type="submit") Allow
-          a.btn.btn-danger.cancel(href="/auth/cancel/#{client_id}") Cancel
+          a.btn.btn-danger.cancel(href="/deny/access/#{client_id}/#{state}") Cancel

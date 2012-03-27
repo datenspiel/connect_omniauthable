@@ -20,7 +20,13 @@ class oauth
       # authenticate a client
       url = server.url
       authenticateClientMatcher = routeMatcher(config.oauth_config.authorizationUrlBase)
-      server.authenticateClient(req,res,next) if authenticateClientMatcher.parse(url)?
+      denyClientAccessMatcher   = routeMatcher(config.oauth_config.denyClientAccessURL)
+      grantClientAccessMatcher  = routeMatcher(config.oauth_config.grantClientAccessURL)
+      server.authenticateClient() if authenticateClientMatcher.parse(url)?
+      server.grantClientAccess()  if grantClientAccessMatcher.parse(url)?
+      denyAccessParams = denyClientAccessMatcher.parse(url)
+      if denyAccessParams?
+        server.denyClientAccess(denyAccessParams['id'],denyAccessParams['state'])
         
 
       #server.authenticateClient(req,res,next) if server.url is config.oauth_config.authorizationUrlBase
