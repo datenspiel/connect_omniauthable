@@ -9,7 +9,7 @@ _       = require('./util/underscore_extension')._
 Client      = require("./models/client").Client
 AccessGrant = require("./models/grant_access").AccessGrant
 
-# Error response types as describe in draft-ietf-oauth-v2-23
+# Error response types as described in draft-ietf-oauth-v2-23
 # section 4.1.2.1
 responseError = 
   access            : "access_denied"
@@ -161,6 +161,18 @@ class OAuthServer
       # Error handling for missing parameters.
       @handleError({msg: "Missing parameters!"})
 
+  # Used if the url matches oauth_config.denyClientAccessURL. 
+  # (See lib/oauth_config.coffee).
+  #
+  # Redirects the browser back to 'redirect_uri' with an access_denied
+  # error code.
+  #
+  # Method: GET
+  #
+  # client_id - The client id with which the client is registered at OAuth Server
+  # state     - The value of the state parameter passed in the initial request
+  #             (see #authenticateClient)
+  #
   denyClientAccess:(client_id,state)->
     Client.find({'client_id':client_id},(err,records)=>
       console.log(err) if err
@@ -174,6 +186,11 @@ class OAuthServer
 
     )
 
+  # Used if the url matches oauth_config.grantClientAccessURL. 
+  # (See lib/oauth_config.coffee)
+  #
+  # Adds a new AccessGrant for the client which was granted access.
+  # Redirects the browser back to redirect_uri with the authorization code.
   grantClientAccess:->
     clientId = @req.body.client_id
     state    = @req.body.state

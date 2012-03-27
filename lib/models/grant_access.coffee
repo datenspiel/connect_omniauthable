@@ -36,8 +36,8 @@ class AccessGrant extends Mongoose.Base
   #
   # Returns the expire date of the access grant.
   getGrantAccessExpireDate:->
-    grantedAtDate = @.getGrantedAt()
-    grantedAtDate.setMinutes(grantedAtDate.getMinutes() + @.getExpiresAt())
-    return grantedAtDate
+    expiresAtDate = @.getGrantedAt()
+    expiresAtDate.setMinutes(expiresAtDate.getMinutes() + @.getExpiresAt())
+    return expiresAtDate
 
 exports.AccessGrant = AccessGrant
