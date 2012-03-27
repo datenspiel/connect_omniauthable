@@ -1,3 +1,23 @@
 # Connect Omniauthable
 
 An OmniAuth (2.x) server implementation for [Node.js](http://nodejs.org) written in [CoffeeScript](http://coffeescript.org) as [Connect](http://www.senchalabs.org/connect/) middleware.
+
+## Prerequirements
+
+### Connect middlewares
+
+* bodyParser
+
+### Libraries
+
+* mongoose.js
+* common-dwarf-mongoose
+* connect.js
+* underscore.js
+* routematcher
+* jade
+
+
+### Credits
+
+Author Daniel Schmidt, Datenspiel GmbH 2012

@@ -1,0 +1,13 @@
+# locale installed modules
+node_modules
+
+.rvmrc
+
+test.coffee
+
+# vim generated backups
+.*~
+
+# OSX Finder stuff
+.DS_Store
+
