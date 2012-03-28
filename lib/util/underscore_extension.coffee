@@ -24,6 +24,10 @@ urlMatcher =
     match = url.match(matchExpression)
     return match?
 
+  # Generates a random String and returns it.
+  randomString:->
+    Math.random().toString(36).substring(7)
+
 # Extend underscore.js with own modules
 _.mixin(urlMatcher)
 

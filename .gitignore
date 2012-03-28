@@ -4,6 +4,7 @@ node_modules
 .rvmrc
 
 test.coffee
+tests/fixtures/url_params.txt
 
 # vim generated backups
 .*~

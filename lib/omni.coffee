@@ -2,8 +2,6 @@ mongo   = require 'mongoose'
 require "common_dwarf_mongoose"
 config  = require "./oauth_config"
 require "./server"
-require "./models/access_token"
-Client  = require("./models/client").Client
 routeMatcher = require('routematcher').routeMatcher
 
 mongo.connect('mongodb://localhost/ovu_oauth_server')

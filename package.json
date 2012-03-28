@@ -6,7 +6,7 @@
   "repository": "git@github.com:datenspiel/connect_omniauthable.git",
   "author": "Daniel Schmidt <dsci@code799.net>",
   "dependencies": {
-    "common-dwarf-mongoose":"https://github.com/datenspiel/common_dwarf_mongoose/tarball/v0.0.3",
+    "common-dwarf-mongoose":"https://github.com/datenspiel/common_dwarf_mongoose/tarball/v0.0.6",
     "mongoose":"2.5.13",
     "coffee-script":"1.2.0",
     "connect":"2.0.3",

@@ -1,10 +1,12 @@
-secure = require('./../util/secure_random')
-
+require "./../util/secure_random"
 class AccessToken extends Mongoose.Base
-  @include secure.SecureRandom
+  @include Extensions.SecureRandom
 
   alias: 'acess_token'
 
+  # The following fields are defined:
+  #
+  # access_token - The access 
   fields:
     access_token  : { type: String,   index: true }
     client_id     : { type: String,   index: true }
@@ -13,7 +15,7 @@ class AccessToken extends Mongoose.Base
     expires_at    : { type: Date,     index: true }
 
   save:(cb)->
-    @.set('access_token':@secureToken(@getClientId()))
+    @.set('access_token':@secureToken())
     super(cb)
 
 exports.AccessToken = AccessToken

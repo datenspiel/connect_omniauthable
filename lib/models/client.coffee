@@ -8,5 +8,6 @@ class Client extends Mongoose.Base
     scopes            : { type: String, index: true }
     created_at        : { type: Date,   index: true }
     application_name  : { type: String, index: true }
+    tokens_granted    : { type: Number, index: true }
 
 exports.Client = Client

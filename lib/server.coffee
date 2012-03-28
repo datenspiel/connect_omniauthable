@@ -10,6 +10,10 @@ Client      = require("./models/client").Client
 AccessGrant = require("./models/grant_access").AccessGrant
 AccessToken = require("./models/access_token").AccessToken
 
+# Require mixin modules
+require "./util/validations"
+require "./util/secure_random"
+
 # Error response types as described in draft-ietf-oauth-v2-23
 # section 4.1.2.1
 responseError = 
@@ -32,6 +36,8 @@ class parseBody
       return POST
     )
 
+class Server extends Mixin.Base
+
 # A wrapper around the node/connect response object with 
 # some useful methods.
 class ResponseHeader
@@ -40,6 +46,10 @@ class ResponseHeader
   # Sets the response header to text/html.
   setHtml:->
     @response.setHeader("Content-Type", "text/html")
+
+  # Sets the response header to application/json
+  setJSON:->
+    @response.setHeader("Content-Type", "application/json")
 
   # Sets the response header to a given location and 
   # the status code to 302 (FOUND)
@@ -86,8 +96,10 @@ class Templater
 
 # The main class which acts as OAuth authentication server.
 #
-class OAuthServer
-
+class OAuthServer extends Server
+  @include Extensions.Validations
+  @include Extensions.SecureRandom
+  
   # Initializes the OAuthServer class.
   # 
   # req   - A request object instance.
@@ -198,7 +210,8 @@ class OAuthServer
     clientId = @req.body.client_id
     state    = @req.body.state
     # What happens if GrantAccess for given client exists? Since the authorization 
-    # code is unique I would say that this is ignorable. 
+    # code is unique I would say that this is ignorable and maybe there are more 
+    # grants for a client (different user maybe).
 
     # new grant access
     accessGrant = new AccessGrant()
@@ -229,6 +242,8 @@ class OAuthServer
   #
   # It authorizes the client and if this is done and all above listed parameters
   # are valid it sends an Access Token Response as json.
+  #
+  # Note: There is no support for expired tokens by now.
   requestAccessToken:->
     params = 
       code          : @req.body.code
@@ -238,7 +253,55 @@ class OAuthServer
       client_secret : @req.body.client_secret
 
     @validateAccessTokenParams(params)
-
+    # Authenticate the client with client_id and client_secret
+    Client.find({client_id: params.client_id, client_secret:client_secret}, (err,clients)=>
+      @unauthorizedRequest({redirect_uri: params.redirect_uri},responseError.unauthorized) if _.isEmpty(clients)
+      # There is a client registered.
+      client = Client.becomesFrom(clients[0])
+      # Check if an access grant is available for this client and make sure that the
+      # access grant isn't expired.
+      # Note that AccessGrant#_id is the authorization code.
+      AccessGrant.find({"_id": ObjectId("#{params.code}"), client_id: client.getClientId()}, (err,grants)=>
+        @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access) if _.isEmpty(grants)
+        # There is grant for this client with this code. 
+        grant = AccessGrant.becomesFrom(grants[0])
+        # Check if the grant is expired.
+        now = new Date()
+        if now < grant.getGrantAccessExpiresDate()
+          # Check if grant was revoked before
+          unless grant.isRevoked()
+            # Grant is not expired, continue with generating an AccessToken
+            # Generate an access token 
+            accessToken = new AccessToken()
+            accessToken.set('client_id': client.getClientId())
+            accessToken.save((err,document)=>
+              throw err if err
+              if document?
+                # Updates the client grant token count and send the access token response if 
+                # updating succeeds.
+                Client.update({"_id": ObjectId("#{client.getId()}")}, { $inc: { tokens_granted: 1} }, {}, (err,numEffected)=>
+                  if numEffected > 0
+                    # Revoke the access grant to make sure it is used only once. 
+                    AccessGrant.update({"_id": ObjectId("#{grant.getId()}")},{revoked: true, granted_at: new Date()}, (err,numEffected)=>
+                      token = AccessToken.becomesFrom(document)
+                      # clients token_granted is incremented successfully
+                      # Send a response as JSON
+                      tokenResponse = 
+                        access_token  : token.getAccessToken()
+                        token_type    : "bearer"
+                      @responseHeader.setJSON()
+                      @writeResponse(JSON.stringify(tokenResponse),@res)
+                    ) 
+                ) 
+            )
+          else
+            # Grant was revoked before and is used more than once here.
+            @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
+        else
+          # Access grant is expired.
+          @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
+      )
+    )
 
   # Test method. 
   # Should be removed in later versions.
@@ -281,47 +344,7 @@ class OAuthServer
 
     Templater.compile(compileOptions)
 
-  # Validates the params as described in #authenticateClient
-  # 
-  # params - A parameter map which is described in #authenticateClient
-  #
-  # It calls #handleErrors if an error occured otherwise it returns nothing. 
-  validateAuthorizationParams:(params)->
-    required = ['client_id', 'response_type', 'redirect_uri','state']
-    errors = []
-    for parameter in required
-      unless params.hasOwnProperty(parameter) or params[parameter] is ''
-        errors.push({missing: parameter})
-
-    unless _(params['redirect_uri']).isValidUrl()
-      errors.push({errorMsg: 'invalid URL format for redirect_uri'})
-
-    @handleError(errors) unless _.isEmpty(errors)
-
-  # Validates the params which are required in #requestAccessToken.
-  # 
-  # params - A paramater map which contains
-  #   code          - The authorization code which was send by #grantClientAccess
-  #   redirect_uri  - The location registered and used in the initial request (#authenticateClient)
-  #   grant_type    - The value 'authorization_code'
-  #   client_id     - The client id with which the client is registered.
-  #   client_secret - The client secret with which the client is registered
-  #
-  # If any error occurs #handleErrors is called (described in section 5.2)
-  # otherwise it returns nothing
-  validateAccessTokenParams:(params)->
-    required = ['code', 'redirect_uri', 'grant_type','client_id', 'client_secret']
-    errors = []
-    for parameter in required
-      if params[parameter] is ''
-        errors.push({error: "#{parameter} is empty but required."})
-    unless _(params['redirect_uri']).isValidUrl()
-      errors.push({error: 'invalid URL format for redirect_uri.'})
-    unless params['grant_type'] isnt 'authorization_code'
-      errors.push({error: 'Invalid type for grant_type.'})
-
-    @handleErrors(errors, {type: "json"}) unless _.isEmpty(errors)
-
+  
   # Writes any given data to the response object and sends it.
   # 
   # data - Any data (could be compiled HTML or JSON)
