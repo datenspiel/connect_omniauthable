@@ -39,11 +39,8 @@ app.listen 3000
 | Feature                               | Status              |
 |:--------------------------------------|:--------------------|
 | Web Application Workflow              | Done                |
-|:--------------------------------------|:--------------------|
 | Client-Side Web Applications Workflow | ToDo                |
-|:--------------------------------------|:--------------------|
 | More informational error handling     | ToDo                |
-|:--------------------------------------|:--------------------|
 | Scope support                         | ToDo                |
 
 ### Credits
