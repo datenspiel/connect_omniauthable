@@ -6,10 +6,13 @@ fs      = require 'fs'
 # into valid html.
 class Templater
 
-  @setTemplateRoot:(path)->
+  constructor:->
+
+
+  setTemplateRoot:(path)->
     @templatesPath = path
 
-  @getTemplatesRoot:->
+  getTemplatesRoot:->
     if @templatesPath? then @templatesPath else path.join(__dirname,'..','views')
 
   # Compiles a template and pass it to a callback.
@@ -20,7 +23,7 @@ class Templater
   #     :cb       - a callback function which expects the compiled template
   #                 and a response object
   #     :res      - the response object
-  @compile:(options)->
+  compile:(options)->
     callback = options.cb
     response = options.res
     compiledTemplate = jade.compile(@readTemplate(options.template))(options.locals)
@@ -32,7 +35,7 @@ class Templater
   # name - name of the template without file extension
   #
   # Returns the content of the template.
-  @readTemplate:(name)->
-    return fs.readFileSync(path.join(@templatesPath,"#{name}.jade"))
+  readTemplate:(name)->
+    return fs.readFileSync(path.join(@getTemplatesRoot(),"#{name}.jade"))
 
 module.exports = Templater

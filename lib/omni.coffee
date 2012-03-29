@@ -4,14 +4,18 @@ config  = require "./oauth_config"
 require "./server"
 routeMatcher = require('routematcher').routeMatcher
 
-mongo.connect('mongodb://localhost/ovu_oauth_server')
-
 # The main middleware method. 
 # It initializes the OAuthServer and delegates the requests 
-# to the responsible method. 
+# to the responsible method.
+#
+# options       - The options map to configure the oauth server 
+#     database  - The database name as string
+#
 class oauth
-  constructor: (codestring)-> 
-    options = codestring.toUpperCase() if codestring?
+  constructor: (options)-> 
+    database = if options.hasOwnProperty("database") then options.database else "oauth_server"
+
+    mongo.connect("mongodb://localhost/#{database}")
     return (req,res,next)->
       server = new OAuthServer(req,res,next) 
       # authenticate a client
@@ -20,18 +24,18 @@ class oauth
       denyClientAccessMatcher   = routeMatcher(config.oauth_config.denyClientAccessURL)
       grantClientAccessMatcher  = routeMatcher(config.oauth_config.grantClientAccessURL)
       accessTokenRequestMatcher = routeMatcher(config.oauth_config.accessTokenRequestEndpointURL)
-      server.authenticateClient() if authenticateClientMatcher.parse(url)?
-      server.grantClientAccess()  if grantClientAccessMatcher.parse(url)?
-      server.requestAccessToken() if accessTokenRequestMatcher.parse(url)?
-      denyAccessParams = denyClientAccessMatcher.parse(url)
-      if denyAccessParams?
+
+      if authenticateClientMatcher.parse(url)?
+        server.authenticateClient() 
+      else if grantClientAccessMatcher.parse(url)?
+        server.grantClientAccess()
+      else if accessTokenRequestMatcher.parse(url)?
+        server.requestAccessToken()
+      else if denyClientAccessMatcher.parse(url)?
+        denyAccessParams = denyClientAccessMatcher.parse(url)
         server.denyClientAccess(denyAccessParams['id'],denyAccessParams['state'])
-        
-
-      #server.authenticateClient(req,res,next) if server.url is config.oauth_config.authorizationUrlBase
-      #server.other(options) if server.url is '/persons'
-      
-      # Pass through to the next layer if nothing matches...
-      next() if url is "/"
-
-module.exports.omni_auth = oauth
+      else
+        # pass through authenticate if nothing other matches
+        server.authenticateWithAccessToken()
+         
+module.exports = oauth

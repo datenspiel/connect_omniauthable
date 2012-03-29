@@ -1,0 +1,22 @@
+doctype html
+html 
+  title Callback Site
+body
+  | OAuth Callback
+  div.infos
+    ul
+      li.authcode AuthCode:#{code}
+      li.state state:#{state}
+      li.stateFromServer state:#{state_from_server}
+
+  div.form
+    form(method="POST", action="http://localhost:3000/fake/access_token")
+      input(type="hidden", value="authorization_code", name="grant_type")
+      input(type="hidden", value="#{code}", name="code")
+      input(type="hidden", value="#{redirect_uri}", name="redirect_uri")
+      input(type="hidden", value="#{client_id}", name="client_id")
+      input(type="hidden", value="#{client_secret}", name="client_secret")
+      input(type="hidden", value="#{state_from_server}", name="state")
+      
+      .form-actions
+        button.btn.btn-success(type="submit") Request Access Token

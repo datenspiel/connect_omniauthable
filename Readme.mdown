@@ -4,7 +4,9 @@ An OmniAuth (2.x) server implementation for [Node.js](http://nodejs.org) written
 
 ## Prerequirements
 
-### Connect middlewares
+### Connect middleware
+
+It uses the following connect middleware(s):
 
 * bodyParser
 
@@ -17,6 +19,32 @@ An OmniAuth (2.x) server implementation for [Node.js](http://nodejs.org) written
 * routematcher
 * jade
 
+### Usage
+
+```coffeescript
+oauth_server  = require('connect_omniauthable')
+connect       = require 'connect'
+
+app do connect
+
+oauthConfig =
+  database: 'ourOAuthDb'
+
+app.use oauth_server(oauthConfig)
+app.listen 3000
+```
+
+### Dones and ToDos
+
+| Feature                               | Status              |
+|:--------------------------------------|:--------------------|
+| Web Application Workflow              | Done                |
+|:--------------------------------------|:--------------------|
+| Client-Side Web Applications Workflow | ToDo                |
+|:--------------------------------------|:--------------------|
+| More informational error handling     | ToDo                |
+|:--------------------------------------|:--------------------|
+| Scope support                         | ToDo                |
 
 ### Credits
 

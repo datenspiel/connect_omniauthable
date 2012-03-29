@@ -1,0 +1,11 @@
+doctype html
+html 
+  title Access granted
+body
+  | OAuth Callback
+  div.result
+    p
+      | You could now access data.
+    ul
+      li.token Your Access Token:#{access_token}
+      li.type #{token_type} 

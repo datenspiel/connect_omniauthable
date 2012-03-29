@@ -55,6 +55,7 @@ class OAuthServer extends Server
     # split url into suffix and possible params
     [@url,@paramsFromUrl] = @req.url.split('?')
     @responseHeader = new ResponseHeader(@res)
+    @templater = new Templater()
   
   ###
   Used if the url matches oauth_config.authorizationUrlBase. 
@@ -86,7 +87,7 @@ class OAuthServer extends Server
   
       # Is client present?
       Client.find({'client_id':params['client_id']},(err,records)=>
-        console.log "records are #{records.length}"
+        #console.log "records are #{records.length}"
         if records.length is 0
         #  # no client registered => error
           @unauthorizedRequest(params, responseError.unauthorized)
@@ -109,7 +110,7 @@ class OAuthServer extends Server
               locals: localVars
               cb: @writeResponse
               res: @res
-            Templater.compile(compileOptions)
+            @templater.compile(compileOptions)
           
       )
 
@@ -197,69 +198,81 @@ class OAuthServer extends Server
 
     @validateAccessTokenParams(params)
     # Authenticate the client with client_id and client_secret
-    Client.find({client_id: params.client_id, client_secret:client_secret}, (err,clients)=>
-      @unauthorizedRequest({redirect_uri: params.redirect_uri},responseError.unauthorized) if _.isEmpty(clients)
-      # There is a client registered.
-      client = Client.becomesFrom(clients[0])
-      # Check if an access grant is available for this client and make sure that the
-      # access grant isn't expired.
-      # Note that AccessGrant#_id is the authorization code.
-      AccessGrant.find({"_id": ObjectId("#{params.code}"), client_id: client.getClientId()}, (err,grants)=>
-        @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access) if _.isEmpty(grants)
-        # There is grant for this client with this code. 
-        grant = AccessGrant.becomesFrom(grants[0])
-        # Check if the grant is expired.
-        now = new Date()
-        if now < grant.getGrantAccessExpiresDate()
-          # Check if grant was revoked before
-          unless grant.isRevoked()
-            # Grant is not expired, continue with generating an AccessToken
-            # Generate an access token 
-            accessToken = new AccessToken()
-            accessToken.set('client_id': client.getClientId())
-            accessToken.save((err,document)=>
-              throw err if err
-              if document?
-                # Updates the client grant token count and send the access token response if 
-                # updating succeeds.
-                Client.update({"_id": ObjectId("#{client.getId()}")}, { $inc: { tokens_granted: 1} }, {}, (err,numEffected)=>
-                  if numEffected > 0
-                    # Revoke the access grant to make sure it is used only once. 
-                    AccessGrant.update({"_id": ObjectId("#{grant.getId()}")},{revoked: true, granted_at: new Date()}, (err,numEffected)=>
-                      token = AccessToken.becomesFrom(document)
-                      # clients token_granted is incremented successfully
-                      # Send a response as JSON
-                      tokenResponse = 
-                        access_token  : token.getAccessToken()
-                        token_type    : "bearer"
-                      @responseHeader.setJSON()
-                      @writeResponse(JSON.stringify(tokenResponse),@res)
-                    ) 
-                ) 
-            )
+    Client.find({client_id: params.client_id, secret:params.client_secret}, (err,clients)=>
+      if _.isEmpty(clients)
+        @unauthorizedRequest({redirect_uri: params.redirect_uri},responseError.unauthorized) 
+      else
+        # There is a client registered.
+        client = Client.becomesFrom(clients[0])
+        # Check if an access grant is available for this client and make sure that the
+        # access grant isn't expired.
+        # Note that AccessGrant#_id is the authorization code.
+        AccessGrant.find({"_id": "#{params.code}", client_id: client.getClientId()}, (err,grants)=>
+          @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access) if _.isEmpty(grants)
+          # There is grant for this client with this code. 
+          grant = AccessGrant.becomesFrom(grants[0])
+          # Check if the grant is expired.
+          now = new Date()
+          if now < grant.getGrantAccessExpireDate()
+            # Check if grant was revoked before
+            unless grant.isRevoked()
+              # Grant is not expired, continue with generating an AccessToken
+              # Generate an access token 
+              accessToken = new AccessToken()
+              accessToken.set('client_id': client.getClientId())
+              accessToken.save((err,document)=>
+                throw err if err
+                if document?
+                  # Updates the client grant token count and send the access token response if 
+                  # updating succeeds.
+                  Client.update({"_id": "#{client.getId()}"}, { $inc: { tokens_granted: 1} }, {}, (err,numEffected)=>    
+                    if numEffected > 0
+                      # Revoke the access grant to make sure it is used only once. 
+                      AccessGrant.update({"_id": "#{grant.getId()}"},{revoked: true, granted_at: new Date()}, {},(err,grantsEffected)=>
+                        token = AccessToken.becomesFrom(document)
+                        # clients token_granted is incremented successfully
+                        # Send a response as JSON
+                        tokenResponse = 
+                          access_token  : token.getAccessToken()
+                          token_type    : "bearer"
+                        @responseHeader.setJSON()                     
+                        @writeResponse(JSON.stringify(tokenResponse),@res)
+                      ) 
+                  ) 
+              )
+            else
+              # Grant was revoked before and is used more than once here.
+              @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
           else
-            # Grant was revoked before and is used more than once here.
+            # Access grant is expired.
             @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
-        else
-          # Access grant is expired.
-          @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
-      )
+        )
     )
 
-  # Test method. 
-  # Should be removed in later versions.
-  other: (options)->
-    console.log "config is"
-    console.log config.oauth_config  
-    console.log @req.body 
-    console.log "url #{@url}"
-    parseBody(@req,@res) if @req.method is 'POST'
-    console.log "params :"
-    console.log qs.parse(@paramsFromUrl)
-    @res.statusCode = "201"
-    console.log(options)
-    @res.write(JSON.stringify({"name": options}))
-    @res.end()
+  # Authenticates an request at the OAuth Server and passes it through
+  # the next level if the request is authorized. If not it sends an 
+  # JSON error response:
+  #
+  #   * error               - The error type (access_denied)
+  #   * error_description   - The description why the error occured
+  authenticateWithAccessToken:->
+    params = qs.parse(@paramsFromUrl)
+    unless params.hasOwnProperty("access_token")?
+      @unauthorizedRequestWithAccessToken(JSON.stringify({error: responseError.access}))
+    else
+      # find an access token with this one given in params
+      AccessToken.find({access_token : params["access_token"]},(err,tokens)=>
+        @unauthorizedRequestWithAccessToken() if _.isEmpty(tokens)
+        accessToken = AccessToken.becomesFrom(tokens[0])
+        if accessToken.isExpired()
+          responseJSON =
+            error: responseError.access
+            error_description: 'expired access_token'
+        else
+          # all is fine - pass it through the next layer
+          next()
+
+      )
 
   # Handles any unathorized requests. 
   # See OAuth spec at IETF section 4.1.2.1
@@ -272,9 +285,12 @@ class OAuthServer extends Server
   unauthorizedRequest:(params,code)->
     @responseHeader.redirectTo("#{params["redirect_uri"]}?error=#{code}&state=#{params['state']}")
 
+  unauthorizedRequestWithAccessToken:(data)->
+    @responseHeader.setJSON()
+    writeResponse(data,@res)
+
   # Handles any kind of occured errors.
   handleError:(options)->
-    console.log options
     msg = if options.msg? then options.msg else "Something is missing"
     @responseHeader.setHtml()
     localVars = 
@@ -285,7 +301,7 @@ class OAuthServer extends Server
       cb: @writeResponse
       res: @res
 
-    Templater.compile(compileOptions)
+    @templater.compile(compileOptions)
 
   
   # Writes any given data to the response object and sends it.

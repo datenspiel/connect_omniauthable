@@ -20,6 +20,7 @@ class AccessGrant extends Mongoose.Base
 
   # Sets some default date values and calls parents class method.
   save:(cb)->
+    @.set('granted_at':new Date())
     @.set('created_at':new Date())
     @.set('expires_in':10)
     super(cb)
@@ -34,7 +35,7 @@ class AccessGrant extends Mongoose.Base
   # Returns the expire date of the access grant.
   getGrantAccessExpireDate:->
     expiresAtDate = @.getCreatedAt()
-    expiresAtDate.setMinutes(expiresAtDate.getMinutes() + @.getExpiresAt())
+    expiresAtDate.setMinutes(expiresAtDate.getMinutes() + @.getExpiresIn())
     return expiresAtDate
 
 module.exports = AccessGrant

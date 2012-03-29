@@ -2,7 +2,7 @@ require "./../util/secure_random"
 class AccessToken extends Mongoose.Base
   @include Extensions.SecureRandom
 
-  alias: 'acess_token'
+  alias: 'access_token'
 
   # The following fields are defined:
   #
@@ -22,6 +22,10 @@ class AccessToken extends Mongoose.Base
   # Generates and sets the access token before saving.
   save:(cb)->
     @.set('access_token':@secureToken())
+    @.set('created_at': new Date())
     super(cb)
+
+  isExpired:->
+    false 
 
 module.exports = AccessToken

@@ -37,7 +37,7 @@ Extensions.Validations =
         errors.push({error: "#{parameter} is empty but required."})
     unless _(params['redirect_uri']).isValidUrl()
       errors.push({error: 'invalid URL format for redirect_uri.'})
-    unless params['grant_type'] isnt 'authorization_code'
+    unless params['grant_type'] == 'authorization_code'
       errors.push({error: 'Invalid type for grant_type.'})
 
-    @handleErrors(errors, {type: "json"}) unless _.isEmpty(errors)
+    @handleError(errors, {type: "json"}) unless _.isEmpty(errors)
