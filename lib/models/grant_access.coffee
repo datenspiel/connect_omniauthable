@@ -37,4 +37,4 @@ class AccessGrant extends Mongoose.Base
     expiresAtDate.setMinutes(expiresAtDate.getMinutes() + @.getExpiresAt())
     return expiresAtDate
 
-exports.AccessGrant = AccessGrant
+module.exports = AccessGrant

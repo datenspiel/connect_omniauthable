@@ -1,6 +1,6 @@
 {
   "name": "connect_omniauthable",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An OmniAuth (2.x) server implementation for Node as Connect middleware.",
   "keywords" : ["oauth", "connect", "middleware"],
   "repository": "git@github.com:datenspiel/connect_omniauthable.git",
@@ -15,9 +15,11 @@
     "routematcher": "https://github.com/dsci/javascript-route-matcher/tarball/v0.1.0"
   },
   "devDependencies":{
-    "should": "*",
-    "mocha" : "*",
-    "vows"  : "*"
+    "should"    : "*",
+    "mocha"     : "*",
+    "vows"      : "*",
+    "cucumber"  : "latest",
+    "route66"   : "latest"
   },
   "main": "index.js"
 }

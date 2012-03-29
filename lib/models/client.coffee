@@ -10,4 +10,4 @@ class Client extends Mongoose.Base
     application_name  : { type: String, index: true }
     tokens_granted    : { type: Number, index: true }
 
-exports.Client = Client
+module.exports = Client 

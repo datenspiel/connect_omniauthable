@@ -1,14 +1,11 @@
-config  = require "./oauth_config"
-qs      = require 'querystring'
-path    = require 'path'
-jade    = require 'jade'
-fs      = require 'fs'
-_       = require('./util/underscore_extension')._
-
-
-Client      = require("./models/client").Client
-AccessGrant = require("./models/grant_access").AccessGrant
-AccessToken = require("./models/access_token").AccessToken
+config          = require "./oauth_config"
+qs              = require 'querystring'
+_               = require('./util/underscore_extension')._
+Client          = require("./models/client")
+AccessGrant     = require("./models/grant_access")
+AccessToken     = require("./models/access_token")
+Templater       = require("./util/templater")
+ResponseHeader  = require("./util/response")
 
 # Require mixin modules
 require "./util/validations"
@@ -38,61 +35,7 @@ class parseBody
 
 class Server extends Mixin.Base
 
-# A wrapper around the node/connect response object with 
-# some useful methods.
-class ResponseHeader
-  constructor:(@response)->
 
-  # Sets the response header to text/html.
-  setHtml:->
-    @response.setHeader("Content-Type", "text/html")
-
-  # Sets the response header to application/json
-  setJSON:->
-    @response.setHeader("Content-Type", "application/json")
-
-  # Sets the response header to a given location and 
-  # the status code to 302 (FOUND)
-  #
-  # url - An url to which the browser should be redirected.
-  setLocation:(url)->
-    @response.statusCode = 302
-    @response.setHeader("Location", url)
-
-  # Redirects the browser to the given URL.
-  #
-  # url - An url to which the browser should be redirected.
-  redirectTo:(url)->
-    @setLocation(url)
-    @response.end()
-
-# A template class which compiles Jade templates with its locales 
-# into valid html.
-class Templater
-  # The template root absolute to the dir of this file. 
-  @templatesRoot: path.join(__dirname, 'views')
-
-  # Compiles a template and pass it to a callback.
-  #
-  # options - The argument options to compile the template.
-  #     :template - name of the template (without *.jade extension)
-  #     :locals   - contains the key/values for the variables in the template
-  #     :cb       - a callback function which expects the compiled template
-  #                 and a response object
-  #     :res      - the response object
-  @compile:(options)->
-    callback = options.cb
-    response = options.res
-    compiledTemplate = jade.compile(@readTemplate(options.template))(options.locals)
-    callback(compiledTemplate,response)
-
-  # Reads a template from templates root
-  # 
-  # name - name of the template without file extension
-  #
-  # Returns the content of the template.
-  @readTemplate:(name)->
-    return fs.readFileSync(path.join(@templatesRoot,"#{name}.jade"))
 
 # The main class which acts as OAuth authentication server.
 #

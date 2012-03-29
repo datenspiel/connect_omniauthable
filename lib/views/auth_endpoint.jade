@@ -24,23 +24,14 @@ body
         a.brand(href="#") #{client}
 
   .container.wrapper
-    p
-      | Hello #{client}, your id is #{client_id}.
-    p
-      | You are here with state #{state}
-    
     form(action='/grant/access', method='POST',id="messageForm")
       fieldset
-        legend #{client}
-        input(type="hidden", value="#{client_id}", name="client_id")
-        input(type="hidden", value="#{state}", name="state")
+        legend Access Grant for #{client}
+        .control-group
+          input(type="hidden", value="#{client_id}", name="client_id")
+          input(type="hidden", value="#{state}", name="state")
         p.
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-          consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-          proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          #{client} wants to access your data. You want to allow access? 
         .form-actions
           button.btn.btn-success(type="submit") Allow
           a.btn.btn-danger.cancel(href="/deny/access/#{client_id}/#{state}") Cancel

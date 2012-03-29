@@ -11,8 +11,7 @@ mongo.connect('mongodb://localhost/ovu_oauth_server')
 # to the responsible method. 
 class oauth
   constructor: (codestring)-> 
-    
-    options = codestring.toUpperCase()
+    options = codestring.toUpperCase() if codestring?
     return (req,res,next)->
       server = new OAuthServer(req,res,next) 
       # authenticate a client
@@ -33,6 +32,6 @@ class oauth
       #server.other(options) if server.url is '/persons'
       
       # Pass through to the next layer if nothing matches...
-      #next()
+      next() if url is "/"
 
 module.exports.omni_auth = oauth
