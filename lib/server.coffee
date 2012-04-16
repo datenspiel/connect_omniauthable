@@ -249,7 +249,7 @@ class OAuthServer extends Server
         )
     )
 
-  # Authenticates an request at the OAuth Server and passes it through
+  # Authenticates a request at the OAuth Server and passes it through
   # the next level if the request is authorized. If not it sends an 
   # JSON error response:
   #
@@ -268,6 +268,7 @@ class OAuthServer extends Server
           responseJSON =
             error: responseError.access
             error_description: 'expired access_token'
+            @unauthorizedRequestWithAccessToken()
         else
           # all is fine - pass it through the next layer
           next()
@@ -285,7 +286,14 @@ class OAuthServer extends Server
   unauthorizedRequest:(params,code)->
     @responseHeader.redirectTo("#{params["redirect_uri"]}?error=#{code}&state=#{params['state']}")
 
+  # Handles unauthorized request which are done with an access token.
+  # Sends a JSON response.
+  #   
+  # data - The error map
+  #   error               - The error type (access_denied)
+  #   error_description   - The description why the error occured
   unauthorizedRequestWithAccessToken:(data)->
+    @responseHeader.setUnauthorized()
     @responseHeader.setJSON()
     writeResponse(data,@res)
 

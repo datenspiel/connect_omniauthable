@@ -84,6 +84,7 @@ cb = (req,res,client,rh)->
   params = qs.parse(paramsFromUrl)
   if req.method is 'GET'
     oauthCallbackGET(req,res,client,rh,params) unless params.hasOwnProperty("error")
+    # check errors here!
   oauthCallbackPOST(req,res,client,rh) if req.method is 'POST'
 
 oauthCallbackGET = (req,res,client,rh,params)->
@@ -115,6 +116,7 @@ accessTokenRequest = (req,res,client,rh,params)->
   post_request = http.request(post_options,(response)->
     response.setEncoding('utf8')
     response.on('data',(chunk)->
+      console.log chunk
       writeResponse(res,templater.compile({template:'token',locals:JSON.parse(chunk)}))
     )
   )

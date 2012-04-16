@@ -22,7 +22,7 @@ It uses the following connect middleware(s):
 ### Usage
 
 ```coffeescript
-oauth_server  = require('connect_omniauthable')
+oauth_server  = require 'connect_omniauthable'
 connect       = require 'connect'
 
 app do connect

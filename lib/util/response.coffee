@@ -11,6 +11,17 @@ class ResponseHeader
   setJSON:->
     @response.setHeader("Content-Type", "application/json")
 
+  # Sets the response status code to unauthorized
+  setUnauthorized:->
+    @response.statusCode = 401
+
+  # Sets the response status code to any given code.
+  # 
+  # code -  The response HTTP status code as described in
+  #         http://en.wikipedia.org/wiki/HTTP_status
+  setStatus:(code)
+    @response.statusCode = code
+
   # Sets the response header to a given location and 
   # the status code to 302 (FOUND)
   #

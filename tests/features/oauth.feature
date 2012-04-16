@@ -1,4 +1,4 @@
-Feature: Authenticatin at an OAuth Server
+Feature: Authenticate at an OAuth Server
   As registered client
   I want to get an access token from the OAuth Server
   So that I have access to remote data
