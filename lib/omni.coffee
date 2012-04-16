@@ -13,9 +13,9 @@ routeMatcher = require('routematcher').routeMatcher
 #
 class oauth
   constructor: (options)-> 
-    database = if options.hasOwnProperty("database") then options.database else "oauth_server"
-
-    mongo.connect("mongodb://localhost/#{database}")
+    database  = if options.hasOwnProperty("database") then options.database else "oauth_server"
+    host      = if options.hasOwnProperty("database_host") then options.host else "localhost" 
+    mongo.connect("mongodb://#{host}/#{database}")
     return (req,res,next)->
       server = new OAuthServer(req,res,next) 
       # authenticate a client
