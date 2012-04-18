@@ -268,7 +268,7 @@ class OAuthServer extends Server
           responseJSON =
             error: responseError.access
             error_description: 'expired access_token'
-            @unauthorizedRequestWithAccessToken()
+          @unauthorizedRequestWithAccessToken(JSON.stringify(responseJSON))
         else
           # all is fine - pass it through the next layer
           next()
