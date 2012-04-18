@@ -262,16 +262,18 @@ class OAuthServer extends Server
     else
       # find an access token with this one given in params
       AccessToken.find({access_token : params["access_token"]},(err,tokens)=>
-        @unauthorizedRequestWithAccessToken() if _.isEmpty(tokens)
-        accessToken = AccessToken.becomesFrom(tokens[0])
-        if accessToken.isExpired()
-          responseJSON =
-            error: responseError.access
-            error_description: 'expired access_token'
-          @unauthorizedRequestWithAccessToken(JSON.stringify(responseJSON))
+        if _.isEmpty(tokens)
+          @unauthorizedRequestWithAccessToken(JSON.stringify({error: responseError.access})) 
         else
-          # all is fine - pass it through the next layer
-          next()
+          accessToken = AccessToken.becomesFrom(tokens[0])
+          if accessToken.isExpired()
+            responseJSON =
+              error: responseError.access
+              error_description: 'expired access_token'
+            @unauthorizedRequestWithAccessToken(JSON.stringify(responseJSON))
+          else
+            # all is fine - pass it through the next layer
+            @next()
 
       )
 
