@@ -1,12 +1,12 @@
 {
   "name": "connect_omniauthable",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An OmniAuth (2.x) server implementation for Node as Connect middleware.",
   "keywords" : ["oauth", "connect", "middleware"],
   "repository": "git@github.com:datenspiel/connect_omniauthable.git",
   "author": "Daniel Schmidt <dsci@code799.net>",
   "dependencies": {
-    "common-dwarf-mongoose":"latest",
+    "common_dwarf_mongoose":"latest",
     "mongoose":"2.5.13",
     "coffee-script":">=1.2.0",
     "connect":"*",
