@@ -1,6 +1,6 @@
 {
   "name": "connect_omniauthable",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "An OmniAuth (2.x) server implementation for Node as Connect middleware.",
   "keywords" : ["oauth", "connect", "middleware"],
   "repository": "git@github.com:datenspiel/connect_omniauthable.git",
