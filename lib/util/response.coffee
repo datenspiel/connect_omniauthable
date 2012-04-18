@@ -19,7 +19,7 @@ class ResponseHeader
   # 
   # code -  The response HTTP status code as described in
   #         http://en.wikipedia.org/wiki/HTTP_status
-  setStatus:(code)
+  setStatus:(code)->
     @response.statusCode = code
 
   # Sets the response header to a given location and 
