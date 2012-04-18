@@ -257,7 +257,7 @@ class OAuthServer extends Server
   #   * error_description   - The description why the error occured
   authenticateWithAccessToken:->
     params = qs.parse(@paramsFromUrl)
-    unless params.hasOwnProperty("access_token")?
+    unless params.hasOwnProperty("access_token")
       @unauthorizedRequestWithAccessToken(JSON.stringify({error: responseError.access}))
     else
       # find an access token with this one given in params
@@ -295,7 +295,7 @@ class OAuthServer extends Server
   unauthorizedRequestWithAccessToken:(data)->
     @responseHeader.setUnauthorized()
     @responseHeader.setJSON()
-    writeResponse(data,@res)
+    @writeResponse(data,@res)
 
   # Handles any kind of occured errors.
   handleError:(options)->
