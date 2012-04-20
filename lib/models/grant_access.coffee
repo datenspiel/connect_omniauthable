@@ -1,6 +1,8 @@
 class AccessGrant extends Mongoose.Base
   alias: 'access_grant'
 
+  connection: oauth_connection
+
   # The following fields are defined:
   #
   # client_id   - A reference to the client which was granted for access.

@@ -1,6 +1,8 @@
 class Client extends Mongoose.Base
   alias: 'client'
 
+  connection: oauth_connection
+
   fields:
     secret            : { type: String, index: true }
     client_id         : { type: String, index: true }

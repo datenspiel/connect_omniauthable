@@ -9,6 +9,13 @@ require "common_dwarf_mongoose"
 http            = require "http"
 mongo           = require "mongoose"
 connect         = require "connect"
+
+# Connect to database.
+global.oauth_connection = mongo.createConnection('mongodb://localhost/ovu_oauth_server')
+
+# different db
+different_db = mongo.createConnection('mongodb://localhost/different')
+
 ResponseHeader  = require("#{process.cwd()}/lib/util/response")
 Templater       = require("#{process.cwd()}/lib/util/templater")
 Client          = require("#{process.cwd()}/lib/models/client")
@@ -16,8 +23,16 @@ _               = require("#{process.cwd()}/lib/util/underscore_extension")._
 qs              = require 'querystring'
 routeMatcher    = require('routematcher').routeMatcher
 
-# Connect to database.
-mongo.connect('mongodb://localhost/ovu_oauth_server')
+class User extends Mongoose.Base
+
+  alias: 'user'
+
+  fields:
+    name                : { type: String }
+    encrypted_password  : { type: String }
+
+  connection: different_db
+
 
 # Create a new Client
 client = new Client()
@@ -25,6 +40,15 @@ client.set('client_id': _.randomString())
 client.set('secret':_.randomString())
 client.set('application_name':'OAuth Test client')
 client.set('redirect_uri':'http://localhost:3000/oauth/cb')
+
+# create a User
+user = new User()
+user.set('name':"master")
+user.set('encrypted_password' : '1234dfdf')
+user.save((err,user)->
+  console.log user
+)
+
 
 templater = new Templater()
 templater.setTemplateRoot("#{process.cwd()}/tests/oauth_test_app/views/")

@@ -87,6 +87,7 @@ class OAuthServer extends Server
   
       # Is client present?
       Client.find({'client_id':params['client_id']},(err,records)=>
+        
         #console.log "records are #{records.length}"
         if records.length is 0
         #  # no client registered => error

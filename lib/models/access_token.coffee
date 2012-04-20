@@ -4,6 +4,8 @@ class AccessToken extends Mongoose.Base
 
   alias: 'access_token'
 
+  connection: oauth_connection
+
   # The following fields are defined:
   #
   # access_token  - The access token which is used to access any data

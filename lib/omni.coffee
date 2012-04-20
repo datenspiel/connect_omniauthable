@@ -1,21 +1,25 @@
 mongo   = require 'mongoose'
 require "common_dwarf_mongoose"
 config  = require "./oauth_config"
-require "./server"
-routeMatcher = require('routematcher').routeMatcher
+routeMatcher  = require('routematcher').routeMatcher
+_             = require("./util/underscore_extension")._
 
 # The main middleware method. 
 # It initializes the OAuthServer and delegates the requests 
 # to the responsible method.
-#
+# 
 # options       - The options map to configure the oauth server 
 #     database  - The database name as string
-#
+#     host      - The database host
 class oauth
   constructor: (options)-> 
-    database  = if options.hasOwnProperty("database") then options.database else "oauth_server"
-    host      = if options.hasOwnProperty("database_host") then options.host else "localhost" 
-    mongo.connect("mongodb://#{host}/#{database}")
+    unless _.isEmpty(options)
+      database    = if options.hasOwnProperty("database") then options.database else "oauth_server"
+      host        = if options.hasOwnProperty("database_host") then options.database_host else "localhost" 
+      
+      global.oauth_connection = mongo.createConnection("mongodb://#{host}/#{database}")
+      require "./server"
+
     return (req,res,next)->
       server = new OAuthServer(req,res,next) 
       # authenticate a client
