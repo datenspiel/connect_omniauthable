@@ -20,7 +20,7 @@ urlMatcher =
   #
   # Returns true if url is valid otherwise false. 
   isValidUrl : (url)->
-    matchExpression = new RegExp("^(http|https)\://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$")
+    matchExpression = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
     match = url.match(matchExpression)
     return match?
 

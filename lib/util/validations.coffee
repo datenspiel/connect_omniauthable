@@ -16,8 +16,11 @@ Extensions.Validations =
     unless _(params['redirect_uri']).isValidUrl()
       errors.push({errorMsg: 'invalid URL format for redirect_uri'})
 
-    @handleError(errors) unless _.isEmpty(errors)
-
+    unless _.isEmpty(errors)
+      @handleError(errors) 
+    else
+      return true
+      
   # Validates the params which are required in #requestAccessToken.
   # 
   # params - A paramater map which contains
@@ -40,4 +43,7 @@ Extensions.Validations =
     unless params['grant_type'] == 'authorization_code'
       errors.push({error: 'Invalid type for grant_type.'})
 
-    @handleError(errors, {type: "json"}) unless _.isEmpty(errors)
+    unless _.isEmpty(errors)
+      @handleError(errors, {type: "json"}) 
+    else
+      return
