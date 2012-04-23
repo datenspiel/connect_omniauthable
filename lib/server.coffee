@@ -21,6 +21,7 @@ responseError =
   scope             : "invalid_scope"
   server            : "server_error"
   unavailable       : "temporarily_unavailable"
+  state             : "invalid_state"
 
 class parseBody
   constructor: (req,res)->
@@ -157,22 +158,39 @@ class OAuthServer extends Server
   grantClientAccess:->
     clientId = @req.body.client_id
     state    = @req.body.state
+    self     = @
+    unless state?
+      responseJSON =
+        error: responseError.state
+        error_description: 'missing or invalid state string (CSRF occured?)'
+      @requestError(JSON.stringify(responseJSON))
+      return
     # What happens if GrantAccess for given client exists? Since the authorization 
     # code is unique I would say that this is ignorable and maybe there are more 
     # grants for a client (different user maybe).
-
-    # new grant access
-    accessGrant = new AccessGrant()
-    accessGrant.set('client_id':clientId)
-    accessGrant.save()
-    AccessGrant.find({'client_id':clientId,'revoked':false,'created_at':accessGrant.getCreatedAt()},(err,docs)=>
-      # We assume there is only one.
-      grant = AccessGrant.becomesFrom(docs[0])
-      Client.find({'client_id':clientId}, (err,clients)=>
+    Client.find({'client_id':clientId}, (err,clients)->
+      if _.isEmpty(clients)
+        responseJSON=
+          error: responseError.unauthorized_client
+          error_description: "The client is not authorized to get an access grant."
+        self.unauthorizedRequestWithAccessToken(JSON.stringify(responseJSON))
+      else
         client = Client.becomesFrom(clients[0])
         redirectUri = client.getRedirectUri()
-        @responseHeader.redirectTo("#{redirectUri}?code=#{grant.getAuthorizationCode()}&state=#{state}")
-      )
+        console.log redirectUri
+        # new grant access
+        accessGrant = new AccessGrant()
+        accessGrant.set('client_id':clientId)
+        accessGrant.save()
+        
+        AccessGrant.find({'client_id':clientId,'revoked':false,'created_at':accessGrant.getCreatedAt()},(err,docs)->
+          if err
+            self.requestError(JSON.stringify({error: responseError.server, error_description: "A server error occured"}))
+          else
+            grant = AccessGrant.becomesFrom(docs[0])
+            console.log redirectUri
+            self.responseHeader.redirectTo("#{redirectUri}?code=#{grant.getAuthorizationCode()}&state=#{state}")
+        )
     )
 
   # Used if the url matches oauth_config.accessTokenRequestEndpointURL.
@@ -203,7 +221,9 @@ class OAuthServer extends Server
     accessTokenParamsValid = @validateAccessTokenParams(params)
     if accessTokenParamsValid? and accessTokenParamsValid
       # Authenticate the client with client_id and client_secret
-      Client.find({client_id: params.client_id, secret:params.client_secret}, (err,clients)=>
+      Client.find({"client_id": params.client_id, "secret":params.client_secret}, (err,clients)=>
+        console.log "error: #{err}"
+        console.log clients
         if _.isEmpty(clients)
           @unauthorizedRequest({redirect_uri: params.redirect_uri},responseError.unauthorized) 
         else
@@ -253,6 +273,11 @@ class OAuthServer extends Server
               @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
           )
       )
+    else
+      responseJSON =
+        error: responseError.state
+        error_description: 'missing or invalid state string (CSRF occured?)'
+      @requestError(JSON.stringify(responseJSON))
 
   # Authenticates a request at the OAuth Server and passes it through
   # the next level if the request is authorized. If not it sends an 
@@ -301,6 +326,10 @@ class OAuthServer extends Server
   #   error_description   - The description why the error occured
   unauthorizedRequestWithAccessToken:(data)->
     @responseHeader.setUnauthorized()
+    @responseHeader.setJSON()
+    @writeResponse(data,@res)
+
+  requestError:(data)->
     @responseHeader.setJSON()
     @writeResponse(data,@res)
 

@@ -46,4 +46,4 @@ Extensions.Validations =
     unless _.isEmpty(errors)
       @handleError(errors, {type: "json"}) 
     else
-      return
+      return true

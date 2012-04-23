@@ -11,7 +11,7 @@ mongo           = require "mongoose"
 connect         = require "connect"
 
 # Connect to database.
-global.oauth_connection = mongo.createConnection('mongodb://localhost/ovu_oauth_server')
+global.oauth_connection = mongo.createConnection('mongodb://0.0.0.0/ovu_oauth_server')
 
 # different db
 different_db = mongo.createConnection('mongodb://localhost/different')
