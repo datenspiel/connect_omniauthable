@@ -10,5 +10,4 @@ World = module.exports = (callback)->
 
   @visit = (url,callback)->
     @browser.visit(@page(url),callback)
-
-  callback()
+  callback() if callback?

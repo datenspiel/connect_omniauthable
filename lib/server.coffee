@@ -329,9 +329,16 @@ class OAuthServer extends Server
     @responseHeader.setJSON()
     @writeResponse(data,@res)
 
+
+  # See https://github.com/datenspiel/connect_omniauthable/issues/4
+  # Try to catch the error and send the response anyway.
   requestError:(data)->
-    @responseHeader.setJSON()
-    @writeResponse(data,@res)
+    try
+      @responseHeader.setJSON()
+    catch error
+      console.log(err)
+    finally
+      @writeResponse(data,@res)
 
   # Handles any kind of occured errors.
   handleError:(options)->
