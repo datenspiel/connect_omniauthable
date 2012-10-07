@@ -177,7 +177,6 @@ class OAuthServer extends Server
       else
         client = Client.becomesFrom(clients[0])
         redirectUri = client.getRedirectUri()
-        console.log redirectUri
         # new grant access
         accessGrant = new AccessGrant()
         accessGrant.set('client_id':clientId)
@@ -188,7 +187,6 @@ class OAuthServer extends Server
             self.requestError(JSON.stringify({error: responseError.server, error_description: "A server error occured"}))
           else
             grant = AccessGrant.becomesFrom(docs[0])
-            console.log redirectUri
             self.responseHeader.redirectTo("#{redirectUri}?code=#{grant.getAuthorizationCode()}&state=#{state}")
         )
     )
@@ -222,8 +220,6 @@ class OAuthServer extends Server
     if accessTokenParamsValid? and accessTokenParamsValid
       # Authenticate the client with client_id and client_secret
       Client.find({"client_id": params.client_id, "secret":params.client_secret}, (err,clients)=>
-        console.log "error: #{err}"
-        console.log clients
         if _.isEmpty(clients)
           @unauthorizedRequest({redirect_uri: params.redirect_uri},responseError.unauthorized) 
         else
@@ -336,7 +332,7 @@ class OAuthServer extends Server
     try
       @responseHeader.setJSON()
     catch error
-      console.log(err)
+      console.log(error)
     finally
       @writeResponse(data,@res)
 
