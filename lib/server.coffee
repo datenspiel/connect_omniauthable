@@ -269,11 +269,6 @@ class OAuthServer extends Server
               @unauthorizedRequest({redirect_uri: params.redirect_uri}, responseError.access)
           )
       )
-    else
-      responseJSON =
-        error: responseError.state
-        error_description: 'missing or invalid state string (CSRF occured?)'
-      @requestError(JSON.stringify(responseJSON))
 
   # Authenticates a request at the OAuth Server and passes it through
   # the next level if the request is authorized. If not it sends an 
